@@ -1,0 +1,31 @@
+pip install -r requirements.txt
+//Cài đặt các thư viện Python cần thiết được liệt kê trong requirements.txt.
+--
+docker-compose up -d
+//Khởi chạy các container dịch vụ, bao gồm Zookeeper, Kafka, MongoDB, và Spark.
+--
+docker exec -it kafka-1 kafka-topics.sh --bootstrap-server kafka-1:9092 --create --topic careerbuilder --partitions 3 --replication-factor 1
+docker exec -it kafka-1 kafka-topics.sh --bootstrap-server kafka-1:9092 --create --topic careerlink --partitions 3 --replication-factor 1
+//Tạo các Kafka topics careerbuilder và careerlink để lưu trữ dữ liệu từ Scrapy crawlers.
+--
+docker cp vietnam-jobs-analysis/spark/Careerbuilder vietnam-jobs-analysis-spark-worker-1-1:/opt/bitnami/spark
+docker cp vietnam-jobs-analysis/spark/Careerlink vietnam-jobs-analysis-spark-worker-2-1:/opt/bitnami/spark
+//Copy mã nguồn xử lý dữ liệu bằng Spark (CareerbuilderMain.py và CareerlinkMain.py) vào các Spark Workers.
+--
+scrapy crawl careerbuilder
+scrapy crawl careerlink
+//Chạy các spiders Scrapy để thu thập dữ liệu từ các nguồn tương ứng và đẩy dữ liệu vào Kafka.
+--
+docker exec -it vietnam-jobs-analysis-spark-worker-1-1 /bin/bash spark-submit --master spark://spark-master:7077 --conf spark.jars.packages=org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.apache.kafka:kafka-clients:3.5.0,org.mongodb.spark:mongo-spark-connector_2.12:3.0.2 --conf spark.jars.ivy=/tmp/binami/pkg/cache --num-executors 2 --driver-memory 512m --executor-memory 512m --executor-cores 2 Careerbuilder/CareerbuilderMain.py
+//Chạy Spark job xử lý dữ liệu từ Kafka topic careerbuilder, sau đó lưu kết quả vào MongoDB.
+--
+docker exec -it vietnam-jobs-analysis-spark-worker-2-1 /bin/bash spark-submit --master spark://spark-master:7077 --conf spark.jars.packages=org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.apache.kafka:kafka-clients:3.5.0,org.mongodb.spark:mongo-spark-connector_2.12:3.0.2 --conf spark.jars.ivy=/tmp/binami/pkg/cache --num-executors 2 --driver-memory 512m --executor-memory 512m --executor-cores 2 Careerlink/CareerlinkMain.py
+//Chạy Spark job xử lý dữ liệu từ Kafka topic careerlink, sau đó lưu kết quả vào MongoDB.
+--
+docker exec -it mymongodb bin/bash
+mongosh
+show dbs
+use job-analysis
+db.careerbuilder.find()
+//Truy cập vào MongoDB để kiểm tra dữ liệu đã được lưu từ các Spark jobs.
+--

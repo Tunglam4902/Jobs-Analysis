@@ -1,0 +1,8 @@
+it
+db.careerbuilder.find()
+use job-analysis
+show dbs
+db.careerbuilder.find()
+db-careerbuilder.find()
+use job-analysis
+show dbs
