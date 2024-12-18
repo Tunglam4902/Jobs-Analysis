@@ -12,15 +12,15 @@ docker cp vietnam-jobs-analysis/spark/Careerbuilder vietnam-jobs-analysis-spark-
 docker cp vietnam-jobs-analysis/spark/Careerlink vietnam-jobs-analysis-spark-worker-2-1:/opt/bitnami/spark
 //Copy mã nguồn xử lý dữ liệu bằng Spark (CareerbuilderMain.py và CareerlinkMain.py) vào các Spark Workers.
 --
-scrapy crawl careerbuilder
-scrapy crawl careerlink
-//Chạy các spiders Scrapy để thu thập dữ liệu từ các nguồn tương ứng và đẩy dữ liệu vào Kafka.
---
 docker exec -it vietnam-jobs-analysis-spark-worker-1-1 /bin/bash spark-submit --master spark://spark-master:7077 --conf spark.jars.packages=org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.apache.kafka:kafka-clients:3.5.0,org.mongodb.spark:mongo-spark-connector_2.12:3.0.2 --conf spark.jars.ivy=/tmp/binami/pkg/cache --num-executors 2 --driver-memory 512m --executor-memory 512m --executor-cores 2 Careerbuilder/CareerbuilderMain.py
 //Chạy Spark job xử lý dữ liệu từ Kafka topic careerbuilder, sau đó lưu kết quả vào MongoDB.
 --
 docker exec -it vietnam-jobs-analysis-spark-worker-2-1 /bin/bash spark-submit --master spark://spark-master:7077 --conf spark.jars.packages=org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.0,org.apache.kafka:kafka-clients:3.5.0,org.mongodb.spark:mongo-spark-connector_2.12:3.0.2 --conf spark.jars.ivy=/tmp/binami/pkg/cache --num-executors 2 --driver-memory 512m --executor-memory 512m --executor-cores 2 Careerlink/CareerlinkMain.py
 //Chạy Spark job xử lý dữ liệu từ Kafka topic careerlink, sau đó lưu kết quả vào MongoDB.
+--
+scrapy crawl careerbuilder
+scrapy crawl careerlink
+//Chạy các spiders Scrapy để thu thập dữ liệu từ các nguồn tương ứng và đẩy dữ liệu vào Kafka.
 --
 docker exec -it mymongodb bin/bash
 mongosh
